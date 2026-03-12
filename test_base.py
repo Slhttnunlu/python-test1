@@ -21,28 +21,26 @@
 #         print(f"Test sırasında hata oluştu: {e}")
 #         raise e # Hatayı fırlat ki pytest testin fail olduğunu anlasın
 # Seccond test basic ----------
-import pytest
-from playwright.sync_api import Page, expect
+import re
+from playwright.sync_api import Playwright, sync_playwright, expect
 
-# 1. Mutlaka bir fonksiyon içinde olmalı (test_ ile başlamalı)
-# 2. 'page' parametresi otomatik olarak Playwright fixture'ından gelir
-def test_testinium_suite(page: Page):
-    # Sayfa yükleme süresini biraz artıralım (Docker için güvenli liman)
-    page.set_default_timeout(60000) 
-    
-    print("Ana sayfaya gidiliyor...")
-    page.goto("https://suite.testinium.com/", wait_until="networkidle")
-    
-    # Adımlarını buraya taşı
-    page.get_by_role("button", name="Resources").click()
+
+def run(playwright: Playwright) -> None:
+    browser = playwright.chromium.launch(headless=False)
+    context = browser.new_context()
+    page = context.new_page()
+    page.goto("https://suite.testinium.com/")
     page.get_by_role("link", name="Blogs").click()
-    
-    # Locator'ı biraz daha esnek yapalım (Text içeriğine göre)
-    page.locator("text=Data-Driven Testing: How It").first.click()
-    
-    # Hata aldığın yer için bekleme ekleyelim
-    device_farm_link = page.get_by_role("link", name="Device Farm")
-    device_farm_link.wait_for(state="visible")
-    device_farm_link.click()
-    
-    page.get_by_role("link", name="Home").first.click()
+    page.locator("a").filter(has_text="How to Use Docker for Test").click()
+    page.get_by_label("Main").get_by_role("link", name="Contact Us").click()
+    page.get_by_role("link", name="Test Automation").click()
+    page.get_by_role("link", name="Get Started", exact=True).click()
+
+    # ---------------------
+    context.close()
+    browser.close()
+
+
+with sync_playwright() as playwright:
+    run(playwright)
+
